@@ -34,6 +34,11 @@ func selectBinary(hw *hardware.HardwareProbe) string {
 		return "llama-server" + ext
 	}
 
+	// Apple Silicon Metal
+	if runtime.GOOS == "darwin" && strings.Contains(gpu.Name, "Metal") {
+		return "llama-server" + ext // macOS Metal build is the default binary
+	}
+
 	// GPU detected via nvidia-smi → CUDA; otherwise Vulkan
 	if gpu.ComputeCap != "" {
 		return "llama-server-cuda" + ext
@@ -57,6 +62,14 @@ func downloadURL(hw *hardware.HardwareProbe) string {
 			return fmt.Sprintf("%s/llama-%s-bin-win-vulkan-x64.zip", base, releaseTag)
 		}
 		return fmt.Sprintf("%s/llama-%s-bin-win-cpu-x64.zip", base, releaseTag)
+	}
+
+	// macOS (Metal backend for Apple Silicon, CPU for Intel)
+	if runtime.GOOS == "darwin" {
+		if runtime.GOARCH == "arm64" {
+			return fmt.Sprintf("%s/llama-%s-bin-macos-arm64.zip", base, releaseTag)
+		}
+		return fmt.Sprintf("%s/llama-%s-bin-macos-x64.zip", base, releaseTag)
 	}
 
 	// Linux
@@ -105,7 +118,7 @@ func EnsureBinary(hw *hardware.HardwareProbe) (string, bool, error) {
 
 	os.Remove(archivePath)
 
-	if runtime.GOOS == "linux" {
+	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		os.Chmod(binaryPath, 0755)
 	}
 

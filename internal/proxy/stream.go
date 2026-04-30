@@ -108,7 +108,7 @@ func (s *Server) streamWithDetection(w http.ResponseWriter, r *http.Request, bod
 					}
 					log.Printf("%s detected in stream, injecting stop", reason)
 					// Inject warning + stop
-					warnChunk := `{"choices":[{"delta":{"content":"\n\n⚠️  检测到重复输出，已自动停止。建议重新提问或刷新对话。"},"index":0}]}`
+					warnChunk := `{"choices":[{"delta":{"content":"\n\n⚠️  Repetition detected, auto-stopped. Try rephrasing or refreshing the conversation.\n检测到重复输出，已自动停止。建议重新提问或刷新对话。"},"index":0}]}`
 					fmt.Fprintf(w, "data: %s\n\n", warnChunk)
 					stopChunk := fmt.Sprintf(`{"choices":[{"delta":{},"finish_reason":"%s","index":0}]}`, reason)
 					fmt.Fprintf(w, "data: %s\n\n", stopChunk)

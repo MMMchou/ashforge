@@ -1,4 +1,4 @@
-name: Build llama-server (TurboQuant iso3)
+name: Build llama-server (Ashforge CUDA backend)
 
 on:
   workflow_dispatch:

@@ -909,3 +909,72 @@ models:
     moe_offload_template: ".ffn_.*_exps.=CPU"
     stop_tokens:
       - "</s>"
+
+  # ── Yi ──────────────────────────────────────────
+  - id: yi-1.5-34b
+    display: "Yi-1.5 34B"
+    family: yi
+    params_b: 34
+    arch: llama
+    default_quant: Q4_K_M
+    native_ctx: 4096
+    quants:
+      - label: Q4_K_M
+        hf_repo: bartowski/Yi-1.5-34B-Chat-GGUF
+        hf_file: Yi-1.5-34B-Chat-Q4_K_M.gguf
+        size_gb: 19.9
+
+  - id: yi-1.5-9b
+    display: "Yi-1.5 9B"
+    family: yi
+    params_b: 9
+    arch: llama
+    default_quant: Q5_K_M
+    native_ctx: 4096
+    quants:
+      - label: Q5_K_M
+        hf_repo: bartowski/Yi-1.5-9B-Chat-GGUF
+        hf_file: Yi-1.5-9B-Chat-Q5_K_M.gguf
+        size_gb: 6.6
+
+  # ── Command R ───────────────────────────────────
+  - id: command-r-35b
+    display: "Command R 35B"
+    family: command-r
+    params_b: 35
+    arch: cohere
+    default_quant: Q4_K_M
+    native_ctx: 131072
+    quants:
+      - label: Q4_K_M
+        hf_repo: bartowski/c4ai-command-r7b-12-2024-GGUF
+        hf_file: c4ai-command-r7b-12-2024-Q4_K_M.gguf
+        size_gb: 4.7
+
+  # ── InternLM ────────────────────────────────────
+  - id: internlm3-8b
+    display: "InternLM3 8B"
+    family: internlm
+    params_b: 8
+    arch: internlm2
+    default_quant: Q5_K_M
+    native_ctx: 32768
+    quants:
+      - label: Q5_K_M
+        hf_repo: bartowski/internlm3-8b-instruct-GGUF
+        hf_file: internlm3-8b-instruct-Q5_K_M.gguf
+        size_gb: 5.7
+
+  # ── GLM ─────────────────────────────────────────
+  - id: glm-4-9b
+    display: "GLM-4 9B"
+    family: glm
+    params_b: 9
+    arch: chatglm
+    default_quant: Q5_K_M
+    native_ctx: 131072
+    quants:
+      - label: Q5_K_M
+        hf_repo: bartowski/glm-4-9b-chat-GGUF
+        hf_file: glm-4-9b-chat-Q5_K_M.gguf
+        size_gb: 6.4

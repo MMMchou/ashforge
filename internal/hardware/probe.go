@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+// detectMetalGPU is set by probe_darwin.go on macOS to detect Apple Silicon GPU.
+// On other platforms it remains nil.
+var detectMetalGPU func() *GPUInfo
+
 // HardwareProbe contains detected hardware information
 type HardwareProbe struct {
 	GPUs []GPUInfo `json:"gpus"`
@@ -47,7 +51,7 @@ type RAMInfo struct {
 
 // OSInfo holds OS information
 type OSInfo struct {
-	Platform string `json:"platform"` // "windows", "linux"
+	Platform string `json:"platform"` // "windows", "linux", "darwin"
 	Arch     string `json:"arch"`     // "amd64", "arm64"
 	Version  string `json:"version"`  // OS version string
 }
@@ -56,15 +60,18 @@ type OSInfo struct {
 func Probe() (*HardwareProbe, error) {
 	probe := &HardwareProbe{}
 
-	// Detect GPUs (NVIDIA first, then AMD fallback)
+	// Detect GPUs (NVIDIA first, then AMD, then Apple Silicon Metal)
 	gpus, err := detectNVIDIA()
 	if err == nil && len(gpus) > 0 {
 		probe.GPUs = gpus
 	} else {
-		// Try AMD detection
 		gpus, err = detectAMD()
-		if err == nil {
+		if err == nil && len(gpus) > 0 {
 			probe.GPUs = gpus
+		} else if detectMetalGPU != nil {
+			if metalGPU := detectMetalGPU(); metalGPU != nil {
+				probe.GPUs = []GPUInfo{*metalGPU}
+			}
 		}
 	}
 

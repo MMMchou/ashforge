@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   # ============================================================
-  # Build ashforge CLI (Go binary) — ~30s
+  # Build ashforge CLI (Go binary) — ~30s per platform
   # ============================================================
   build-ashforge:
     strategy:
@@ -22,6 +22,12 @@ jobs:
             goarch: amd64
           - os: windows-2022
             goos: windows
+            goarch: amd64
+          - os: macos-14
+            goos: darwin
+            goarch: arm64
+          - os: macos-13
+            goos: darwin
             goarch: amd64
 
     runs-on: ${{ matrix.os }}
@@ -49,7 +55,6 @@ jobs:
 
   # ============================================================
   # Package everything and create GitHub Release
-  # Downloads pre-built llama-server from build-llama-server.yml
   # ============================================================
   release:
     needs: [build-ashforge]
@@ -68,6 +73,7 @@ jobs:
           workflow: build-llama-server.yml
           name: llama-server-turboquant-win-cuda-12.4
           path: artifacts/llama-server-windows
+        continue-on-error: true
 
       - name: Download llama-server (Linux)
         uses: dawidd6/action-download-artifact@v6
@@ -75,25 +81,42 @@ jobs:
           workflow: build-llama-server.yml
           name: llama-server-turboquant-linux-cuda-12.4
           path: artifacts/llama-server-linux
+        continue-on-error: true
 
       - name: Package Windows release
         run: |
           mkdir -p package-win
           cp artifacts/ashforge-windows-amd64/ashforge.exe package-win/
-          cp artifacts/llama-server-windows/* package-win/
-          # Create turboquant marker for static iso3 detection
-          echo "turboquant-iso3" > package-win/llama-server-cuda.exe.ashforge
+          if [ -d artifacts/llama-server-windows ]; then
+            cp artifacts/llama-server-windows/* package-win/
+            echo "turboquant-iso3" > package-win/llama-server-cuda.exe.ashforge
+          fi
           cd package-win && zip -r ../ashforge-windows-amd64.zip . && cd ..
 
       - name: Package Linux release
         run: |
           mkdir -p package-linux
           cp artifacts/ashforge-linux-amd64/ashforge package-linux/
-          cp artifacts/llama-server-linux/* package-linux/
-          # Create turboquant marker for static iso3 detection
-          echo "turboquant-iso3" > package-linux/llama-server-cuda.ashforge
-          chmod +x package-linux/ashforge package-linux/llama-server-cuda
+          if [ -d artifacts/llama-server-linux ]; then
+            cp artifacts/llama-server-linux/* package-linux/
+            echo "turboquant-iso3" > package-linux/llama-server-cuda.ashforge
+          fi
+          chmod +x package-linux/ashforge package-linux/llama-server-cuda 2>/dev/null || true
           cd package-linux && tar -czf ../ashforge-linux-amd64.tar.gz . && cd ..
+
+      - name: Package macOS arm64 release
+        run: |
+          mkdir -p package-macos-arm64
+          cp artifacts/ashforge-darwin-arm64/ashforge package-macos-arm64/
+          chmod +x package-macos-arm64/ashforge
+          cd package-macos-arm64 && tar -czf ../ashforge-darwin-arm64.tar.gz . && cd ..
+
+      - name: Package macOS amd64 release
+        run: |
+          mkdir -p package-macos-amd64
+          cp artifacts/ashforge-darwin-amd64/ashforge package-macos-amd64/
+          chmod +x package-macos-amd64/ashforge
+          cd package-macos-amd64 && tar -czf ../ashforge-darwin-amd64.tar.gz . && cd ..
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -102,3 +125,5 @@ jobs:
           files: |
             ashforge-windows-amd64.zip
             ashforge-linux-amd64.tar.gz
+            ashforge-darwin-arm64.tar.gz
+            ashforge-darwin-amd64.tar.gz
