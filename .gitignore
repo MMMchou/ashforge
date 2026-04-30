@@ -1,0 +1,28 @@
+# Binaries
+dist/
+*.exe
+/ashforge
+/ashforge-linux
+
+# Benchmark images
+benchmark/*.png
+
+# Go
+*.test
+*.out
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Ashforge runtime
+.ashforge/
+*.log
+internal.zip

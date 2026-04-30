@@ -1,0 +1,202 @@
+name: Build llama-server (TurboQuant iso3)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # ============================================================
+  # Windows CUDA build
+  # 用 Jimver/cuda-toolkit Action，llama.cpp 官方 CI 验证过的方法
+  # ============================================================
+  windows-cuda:
+    runs-on: windows-2022
+
+    steps:
+      - name: Install CUDA Toolkit 12.4
+        uses: Jimver/cuda-toolkit@v0.2.16
+        with:
+          cuda: '12.4.0'
+          method: 'network'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
+
+      - name: Verify CUDA
+        shell: pwsh
+        run: |
+          nvcc --version
+          echo "CUDA_PATH=$env:CUDA_PATH"
+
+      - name: Install Ninja
+        shell: pwsh
+        run: choco install ninja -y --no-progress
+
+      - name: Download TurboQuant source
+        shell: pwsh
+        run: |
+          curl.exe -L -o turboquant.zip "https://codeload.github.com/johndpope/llama-cpp-turboquant/zip/refs/heads/feature/planarquant-kv-cache"
+          Expand-Archive turboquant.zip -DestinationPath .
+          Rename-Item llama-cpp-turboquant-feature-planarquant-kv-cache llama-cpp-turboquant
+
+      - name: Fix MSVC build bugs
+        shell: pwsh
+        run: |
+          # Fix 1: ops.cpp - replace extern declaration with definition (MSVC linker needs it)
+          $ops = "llama-cpp-turboquant\ggml\src\ggml-cpu\ops.cpp"
+          $content = Get-Content $ops -Raw
+          $content = $content -replace 'extern "C" GGML_API int turbo3_cpu_wht_group_size;', 'int turbo3_cpu_wht_group_size = 1;'
+          $content | Set-Content $ops
+
+          # Fix 2: ggml-turbo-quant.c - add M_PI definition (MSVC doesn't define it by default)
+          $tq = "llama-cpp-turboquant\ggml\src\ggml-cuda\ggml-turbo-quant.c"
+          if (Test-Path $tq) {
+            $content = Get-Content $tq -Raw
+            if ($content -notmatch '_USE_MATH_DEFINES') {
+              "#define _USE_MATH_DEFINES`n#include <math.h>`n" + $content | Set-Content $tq
+            }
+          }
+
+          # Fix 3: g_innerq_scale_inv_host linker issue
+          $kvcache = "llama-cpp-turboquant\src\llama-kv-cache.cpp"
+          if (Test-Path $kvcache) {
+            $content = Get-Content $kvcache -Raw
+            if ($content -notmatch 'g_innerq_scale_inv_host') {
+              "/* MSVC linker fix */`nfloat * g_innerq_scale_inv_host = nullptr;`n" + $content | Set-Content $kvcache
+            }
+          }
+
+      - name: Build llama-server
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          cd llama-cpp-turboquant
+          cmake -S . -B build -G "Ninja Multi-Config" ^
+            -DLLAMA_BUILD_SERVER=ON ^
+            -DGGML_NATIVE=OFF ^
+            -DGGML_CUDA=ON ^
+            -DGGML_CUDA_F16=ON ^
+            -DCMAKE_CUDA_ARCHITECTURES="75;80;86;89"
+          cmake --build build --config Release -t llama-server
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifact
+          Copy-Item llama-cpp-turboquant\build\bin\Release\llama-server.exe artifact\llama-server-cuda.exe
+          Get-ChildItem llama-cpp-turboquant\build\bin\Release\*.dll | Copy-Item -Destination artifact\
+
+          # CUDA runtime DLLs
+          $cudaBin = "$env:CUDA_PATH\bin"
+          @("cublas64_12.dll", "cublasLt64_12.dll", "cudart64_12.dll") | ForEach-Object {
+            $src = Join-Path $cudaBin $_
+            if (Test-Path $src) { Copy-Item $src artifact\ }
+          }
+
+          # OpenSSL DLLs (llama-server uses HTTPS; bundle so users don't need OpenSSL installed)
+          $opensslCandidates = @(
+            "C:\Program Files\OpenSSL-Win64\bin\libssl-3-x64.dll",
+            "C:\Program Files\OpenSSL\bin\libssl-3-x64.dll",
+            "C:\Windows\System32\libssl-3-x64.dll"
+          )
+          $opensslFound = $false
+          foreach ($p in $opensslCandidates) {
+            if (Test-Path $p) {
+              Copy-Item $p artifact\
+              $dir = Split-Path $p
+              $crypto = Join-Path $dir "libcrypto-3-x64.dll"
+              if (Test-Path $crypto) { Copy-Item $crypto artifact\ }
+              Write-Host "OpenSSL bundled from: $dir"
+              $opensslFound = $true
+              break
+            }
+          }
+          if (-not $opensslFound) {
+            Write-Warning "OpenSSL DLLs not found — users may need OpenSSL installed"
+          }
+
+          # Use dumpbin to find any other non-system DLL dependencies we might have missed
+          $dumpbin = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" 2>$null
+          if (-not $dumpbin) {
+            $dumpbin = (Get-Command dumpbin.exe -ErrorAction SilentlyContinue)?.Source
+          }
+          if ($dumpbin) {
+            $deps = & $dumpbin /dependents artifact\llama-server-cuda.exe 2>&1
+            $knownSystem = @('KERNEL32','USER32','GDI32','ADVAPI32','SHELL32','OLE32','OLEAUT32',
+                             'NTDLL','MSVCRT','VCRUNTIME','MSVCP','API-MS-','EXT-MS-','NVCUDA')
+            $deps | Select-String '\.dll' | ForEach-Object {
+              $dll = ($_ -replace '^\s+','').Trim()
+              $isSystem = $knownSystem | Where-Object { $dll.ToUpper().StartsWith($_) }
+              if (-not $isSystem) {
+                # Search common locations
+                @("C:\Windows\System32", "C:\Program Files\OpenSSL-Win64\bin", $cudaBin) | ForEach-Object {
+                  $candidate = Join-Path $_ $dll
+                  if ((Test-Path $candidate) -and -not (Test-Path "artifact\$dll")) {
+                    Copy-Item $candidate artifact\
+                    Write-Host "Bundled extra dep: $dll"
+                  }
+                }
+              }
+            }
+          }
+
+          Write-Host "`nFinal artifact contents:"
+          Get-ChildItem artifact\ | Format-Table Name, Length
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-server-turboquant-win-cuda-12.4
+          path: artifact/
+          retention-days: 90
+
+  # ============================================================
+  # Linux CUDA build
+  # ============================================================
+  linux-cuda:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Install CUDA Toolkit 12.4
+        run: |
+          wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+          sudo dpkg -i cuda-keyring_1.1-1_all.deb
+          sudo apt-get update -qq
+          sudo apt-get install -y cuda-toolkit-12-4 gcc-12 g++-12
+          echo "/usr/local/cuda-12.4/bin" >> $GITHUB_PATH
+          echo "LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64" >> $GITHUB_ENV
+
+      - name: Download TurboQuant source
+        run: |
+          curl -L -o turboquant.zip "https://codeload.github.com/johndpope/llama-cpp-turboquant/zip/refs/heads/feature/planarquant-kv-cache"
+          unzip -q turboquant.zip
+          mv llama-cpp-turboquant-feature-planarquant-kv-cache llama-cpp-turboquant
+
+      - name: Fix extern C build bug
+        run: |
+          sed -i 's/^extern "C" GGML_API int turbo3_cpu_wht_group_size;/extern "C" int turbo3_cpu_wht_group_size;/' \
+            llama-cpp-turboquant/ggml/src/ggml-cpu/ops.cpp
+
+      - name: Build llama-server
+        run: |
+          cd llama-cpp-turboquant
+          cmake -B build \
+            -DGGML_CUDA=ON \
+            -DGGML_CUDA_F16=ON \
+            -DCMAKE_CUDA_ARCHITECTURES="75;80;86;89" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc-12 \
+            -DCMAKE_CXX_COMPILER=g++-12
+          cmake --build build --config Release -j$(nproc) --target llama-server
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p artifact
+          cp llama-cpp-turboquant/build/bin/llama-server artifact/llama-server-cuda
+          cp llama-cpp-turboquant/build/bin/lib*.so artifact/ 2>/dev/null || true
+          chmod +x artifact/llama-server-cuda
+          ls -lh artifact/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-server-turboquant-linux-cuda-12.4
+          path: artifact/
+          retention-days: 90
