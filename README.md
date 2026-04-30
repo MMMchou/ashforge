@@ -33,7 +33,7 @@ That's it. Ashforge probes your hardware, reads the model architecture, benchmar
 - **Repetition Detection** — auto-stops loops via n-gram + pattern analysis
 - **Context Compression** — extractive summary when context fills up
 - **IDE Integration** — one command setup for Cursor, Codex CLI, Claude Code
-- **Web Dashboard** — real-time monitoring UI (VRAM, speed, context usage)
+- **TUI Monitor** — real-time terminal dashboard (VRAM, speed, context usage)
 - **Multi-Language** — auto-detects system language (EN/中文)
 - **Smart Port Discovery** — auto-finds available port if default is taken
 
@@ -132,8 +132,9 @@ On subsequent runs:
 | `ashforge list` | List available and downloaded models |
 | `ashforge probe` | Display detected hardware info |
 | `ashforge inject` | Auto-configure IDE (Cursor, Codex, Claude Code) |
-| `ashforge bench` | Run performance benchmark |
-| `ashforge config` | View/modify configuration |
+| `ashforge config show` | View current configuration |
+| `ashforge config set <k=v>` | Modify configuration |
+| `ashforge cache clear` | Clear warmup cache |
 | `ashforge version` | Show version |
 
 ## Advanced Usage
@@ -155,7 +156,29 @@ ashforge run Qwen3-8B --mode context    # maximum context
 
 # Listen on all interfaces (LAN access)
 ashforge run Qwen3-8B --host 0.0.0.0
+
+# Use custom llama-server binary
+ashforge run Qwen3-8B --llama-server /path/to/llama-server
+
+# Set custom model directory
+ashforge config set model_dir=/data/models
+
+# Use HuggingFace mirror
+ashforge config set hf_mirror=https://hf-mirror.com
 ```
+
+## Configuration
+
+Ashforge supports both config file (`~/.ashforge/config.yaml`) and environment variable overrides:
+
+| Env Variable | Config Key | Default |
+|-------------|------------|---------|
+| `ASHFORGE_HF_MIRROR` | `hf_mirror` | `https://hf-mirror.com` |
+| `ASHFORGE_LLAMA_PORT` | `llama_port` | `21434` |
+| `ASHFORGE_PROXY_PORT` | `proxy_port` | `21435` |
+| `ASHFORGE_MODEL_DIR` | `model_dir` | `~/.ashforge/models` |
+| `ASHFORGE_LOG_LEVEL` | `log_level` | `info` |
+| `ASHFORGE_LLAMA_TAG` | — | Built-in release tag |
 
 ## Supported Models
 
@@ -163,17 +186,17 @@ Ashforge ships with a knowledge base of popular models and also auto-detects any
 
 | Family | Models |
 |--------|--------|
-| Qwen | Qwen3-235B, Qwen3-30B, Qwen3-8B, Qwen3-4B, Qwen3-1.7B |
+| Qwen | Qwen3-235B, Qwen3.6-35B, Qwen3-32B, Qwen3-30B, Qwen3-14B, Qwen3-8B, Qwen3-4B, Qwen3-1.7B, Qwen3-0.6B |
 | Llama | Llama 4 Scout, Llama 4 Maverick |
-| Gemma | Gemma 3 27B, 12B, 4B, 1B |
-| DeepSeek | DeepSeek R1 |
+| Gemma | Gemma 3 27B, 12B, 4B |
+| DeepSeek | DeepSeek R1, DeepSeek R1 0528 |
 | Phi | Phi-4 14B, Phi-4 Mini |
 | Mistral | Mistral Small 24B, Codestral 25.01 |
 | Mixtral | Mixtral 8x7B |
 | Yi | Yi-1.5 34B, 9B |
 | InternLM | InternLM3 8B |
 | GLM | GLM-4 9B |
-| Command R | Command R 35B |
+| Command R | Command R 7B |
 
 ## Requirements
 
@@ -216,8 +239,9 @@ ashforge run Qwen3-30B-A3B
 - OpenAI 兼容 API（`http://localhost:21435/v1`）
 - 重复检测 & 上下文压缩
 - IDE 一键配置（Cursor / Codex / Claude Code）
-- Web 监控面板
+- TUI 实时监控面板
 - 自动端口发现
+- 环境变量覆盖配置
 
 ### 安装
 
@@ -237,6 +261,8 @@ ashforge list                  # 查看可用模型
 ashforge status                # 查看运行状态
 ashforge stop                  # 停止服务
 ashforge inject                # 配置 IDE
+ashforge cache clear           # 清除调优缓存
+ashforge config show           # 查看配置
 ```
 
 ---

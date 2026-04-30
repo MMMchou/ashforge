@@ -26,3 +26,6 @@ Thumbs.db
 .ashforge/
 *.log
 internal.zip
+
+# Private docs (not for GitHub)
+docs/

@@ -5,21 +5,19 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"github.com/MMMchou/ashforge/internal/config"
-	"github.com/MMMchou/ashforge/internal/engine"
-	"github.com/MMMchou/ashforge/internal/hardware"
-	"github.com/MMMchou/ashforge/internal/ide"
-	"github.com/MMMchou/ashforge/internal/model"
-	"github.com/MMMchou/ashforge/internal/monitor"
-	"github.com/MMMchou/ashforge/internal/optimizer"
-	"github.com/MMMchou/ashforge/internal/proxy"
+	"github.com/MMMchou/ashforge/core/catalog"
+	"github.com/MMMchou/ashforge/core/config"
+	"github.com/MMMchou/ashforge/core/gateway"
+	"github.com/MMMchou/ashforge/core/hw"
+	"github.com/MMMchou/ashforge/core/ide"
+	"github.com/MMMchou/ashforge/core/llm"
+	"github.com/MMMchou/ashforge/core/tui"
 )
 
 var version = "dev"
@@ -43,7 +41,6 @@ func main() {
 		newStatusCmd(),
 		newProbeCmd(),
 		newInjectCmd(),
-		newBenchCmd(),
 		newListCmd(),
 		newConfigCmd(),
 		newCacheCmd(),
@@ -67,7 +64,6 @@ func newVersionCmd() *cobra.Command {
 
 func newRunCmd() *cobra.Command {
 	var fast bool
-	var bench bool
 	var ctxSize int
 	var reset bool
 	var llamaServer string
@@ -78,16 +74,11 @@ func newRunCmd() *cobra.Command {
 		Short: "Deploy and start a model",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runModel(args[0], fast, bench, ctxSize, reset, llamaServer, host, mode)
+			return runModel(args[0], fast, ctxSize, reset, llamaServer, host, mode)
 		},
 	}
 	cmd.Flags().BoolVar(&fast, "fast", false, "Skip warmup, use cached profile")
-	cmd.Flags().BoolVar(&bench, "bench", false, "Run benchmark after starting")
 	cmd.Flags().BoolVar(&reset, "reset", false, "清除缓存，重新 warmup 探测最优参数")
-	// 微调模式：手动指定上下文大小（覆盖自动计算）
-	// 建议值：4096, 8192, 16384, 32768, 65536, 131072
-	// 越大上下文越长但越慢，越小速度越快但上下文短
-	// 0 = 自动模式（根据 VRAM 和模型大小动态计算最优值）
 	cmd.Flags().IntVar(&ctxSize, "ctx-size", 0, "手动指定上下文大小（0=自动）")
 	cmd.Flags().StringVar(&llamaServer, "llama-server", "", "使用自定义 llama-server 二进制（完整路径）")
 	cmd.Flags().StringVar(&host, "host", "127.0.0.1", "监听地址（默认 127.0.0.1，用 0.0.0.0 开放局域网）")
@@ -138,16 +129,6 @@ func newInjectCmd() *cobra.Command {
 	cmd.Flags().StringVar(&ide, "ide", "", "Target IDE: all, cc, codex, cursor")
 	cmd.Flags().BoolVar(&undo, "undo", false, "Restore original IDE configs")
 	return cmd
-}
-
-func newBenchCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "bench",
-		Short: "Benchmark the running model",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runBench()
-		},
-	}
 }
 
 func newListCmd() *cobra.Command {
@@ -204,16 +185,15 @@ func newConfigCmd() *cobra.Command {
 
 // ── TUI helpers ──────────────────────────────────────────────────────
 
-var dim = color.New(color.FgHiBlack) // 灰色，用于次要信息和导流文字
+var dim = color.New(color.FgHiBlack)
 
-// displayWidth 计算字符串在终端的显示宽度（中文占2列，ASCII占1列）
 func displayWidth(s string) int {
 	width := 0
 	for _, r := range s {
 		if r < 128 {
-			width++ // ASCII 字符占1列
+			width++
 		} else {
-			width += 2 // 中文等宽字符占2列
+			width += 2
 		}
 	}
 	return width
@@ -233,99 +213,37 @@ func printLogo() {
 	dim.Println("by Ashan")
 }
 
-// modelDirDisplay returns the display path for the model directory
-func modelDirDisplay() string {
-	if runtime.GOOS == "windows" {
-		return config.ModelDir() // Windows: 展开完整路径
-	}
-	return "~/.ashforge/models/"
-}
-
 func showMainMenu() {
 	printLogo()
-
-	// ── 命令列表 ──
-	fmt.Println()
-	dim.Println("── 命令 ──────────────────────────────────────────")
-	cmdBlue := color.New(color.FgBlue)
-	tag := color.New(color.FgBlue)
-
-	cmds := []struct{ name, desc, extra string }{
-		{"ashforge run <model>", "启动模型服务，自动调参", "[推荐]"},
-		{"ashforge list", "列出已下载的模型", ""},
-		{"ashforge bench <model>", "重新测速并更新参数缓存", ""},
-		{"ashforge inject", "注入 IDE 配置（CC/Cursor/Codex）", ""},
-		{"ashforge stop", "停止当前运行的服务", ""},
-		{"ashforge status", "查看当前服务状态", ""},
-	}
-	for _, c := range cmds {
-		cmdBlue.Printf("  %-25s", c.name)
-		dim.Printf(" %s", c.desc)
-		if c.extra != "" {
-			tag.Printf("  %s", c.extra)
-		}
-		fmt.Println()
-	}
-
-	// ── 已下载模型 ──
-	fmt.Println()
-	dim.Println("── 本地模型 ────────────────────────────────────────")
-	db, err := model.LoadStore()
-	if err == nil {
-		green := color.New(color.FgGreen)
-		for _, m := range db.ListAll() {
-			green.Print("  ● ")
-			fmt.Printf("%s", m.DisplayName)
-			if len(m.Quantizations) > 0 {
-				q := m.Quantizations[0]
-				dim.Printf("  %s · %.1f GB", q.ID, q.Size_GB)
-			}
-			if m.Arch != "" {
-				dim.Printf(" · %s", m.Arch)
-			}
-			fmt.Println()
-		}
-	}
-
-	// 模型文件夹路径 + 换目录提示
-	fmt.Println()
-	dim.Printf("  模型文件夹：%s\n", modelDirDisplay())
-	dim.Println("  将 .gguf 文件放入此目录，Ashforge 自动识别")
-	// 提示用户如何更换模型文件夹，避免 C 盘空间不足
-	// 运行: ashforge config set model_dir=D:\models
-	// 即可将模型存储迁移到其他盘，之后手动移动已有 .gguf 文件即可
-	dim.Println("  如需更换文件夹: ashforge config set model_dir=D:\\your\\path")
-
 	fmt.Println()
 	fmt.Print("  ")
 	color.New(color.FgGreen).Print("→")
-	fmt.Print(" 运行 ")
-	color.New(color.FgBlue).Print("ashforge run qwen3-30b")
-	fmt.Println(" 开始使用")
-
-	dim.Println("  → github.com/MMMchou/ashforge")
+	fmt.Print(" Quick start: ")
+	color.New(color.FgBlue).Println("ashforge run <model>")
+	fmt.Print("  ")
+	dim.Println("Run ashforge --help for all commands")
 	fmt.Println()
 }
 
-func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llamaServer string, host string, mode string) error {
+func runModel(modelName string, fast bool, ctxSize int, reset bool, llamaServer string, host string, mode string) error {
 	printLogo()
 	fmt.Println()
 
-	// [1/5] Probe hardware
+	// [1/6] Probe hardware
 	fmt.Printf("[1/6] Probing hardware...\n")
-	hw, err := hardware.Probe()
+	sys, err := hw.Probe()
 	if err != nil {
 		return fmt.Errorf("hardware probe failed: %w", err)
 	}
-	gpu := hw.PrimaryGPU()
+	gpu := sys.PrimaryGPU()
 	if gpu != nil {
-		if hw.GPUCount() > 1 {
-			fmt.Printf("      GPU: %d cards, %d MB total VRAM\n", hw.GPUCount(), hw.TotalVRAM_MB())
-			for i, g := range hw.GPUs {
+		if sys.GPUCount() > 1 {
+			fmt.Printf("      GPU: %d cards, %d MB total VRAM\n", sys.GPUCount(), sys.TotalVRAM_MB())
+			for i, g := range sys.GPUs {
 				fmt.Printf("        #%d %s (SM%s, %d MB, %.0f GB/s)\n",
 					i, g.Name, strings.ReplaceAll(g.ComputeCap, ".", ""), g.VRAM_MB, g.MemBandwidth_GBs)
 			}
-			if ts := hw.TensorSplitArg(); ts != "" {
+			if ts := sys.TensorSplitArg(); ts != "" {
 				fmt.Printf("      Split: %s (VRAM×BW weighted)\n", ts)
 			}
 		} else {
@@ -333,17 +251,16 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 				gpu.Name, strings.ReplaceAll(gpu.ComputeCap, ".", ""), gpu.VRAM_MB, gpu.MemBandwidth_GBs)
 		}
 	}
-	fmt.Printf("      RAM: %d GB %s\n", hw.RAM.Total_MB/1024, strings.ToUpper(hw.RAM.Type))
-	fmt.Printf("      OS:  %s %s\n", hw.OS.Platform, hw.OS.Arch)
+	fmt.Printf("      RAM: %d GB %s\n", sys.RAM.Total_MB/1024, strings.ToUpper(sys.RAM.Type))
+	fmt.Printf("      OS:  %s %s\n", sys.OS.Platform, sys.OS.Arch)
 
-	// Validate CUDA version for Blackwell
-	if err := engine.ValidateCUDAVersion(hw); err != nil {
+	if err := llm.ValidateCUDAVersion(sys); err != nil {
 		return err
 	}
 
-	// [2/5] Select configuration
+	// [2/6] Select configuration
 	fmt.Printf("\n[2/6] Selecting configuration...\n")
-	db, err := model.LoadStore()
+	db, err := catalog.Load()
 	if err != nil {
 		return fmt.Errorf("failed to load model database: %w", err)
 	}
@@ -351,11 +268,10 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 	if err != nil {
 		return err
 	}
-	profile, err := model.Match(modelDef, hw)
+	profile, err := catalog.Match(modelDef, sys)
 	if err != nil {
 		return err
 	}
-	// 直接路径模式：绝对路径传入时跳过下载
 	if strings.HasSuffix(strings.ToLower(modelName), ".gguf") {
 		if absPath, err := filepath.Abs(modelName); err == nil {
 			if info, err := os.Stat(absPath); err == nil && !info.IsDir() {
@@ -363,7 +279,6 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 			}
 		}
 	}
-	// 微调模式：用户手动指定 ctx
 	if ctxSize > 0 {
 		profile.CtxOverride = ctxSize
 	}
@@ -379,16 +294,16 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 	}
 	fmt.Printf("\n")
 	accel := []string{}
-	if hw.SupportsFlashAttn() {
+	if sys.SupportsFlashAttn() {
 		accel = append(accel, "Flash Attention")
 	}
 	if profile.NativeMTP {
 		accel = append(accel, "MTP (native)")
 	}
-	if hw.GPUCount() > 1 && hw.HasNVLink() {
+	if sys.GPUCount() > 1 && sys.HasNVLink() {
 		accel = append(accel, "NVLink")
-	} else if hw.GPUCount() > 1 {
-		accel = append(accel, fmt.Sprintf("Tensor Split (%s)", hw.TensorSplitArg()))
+	} else if sys.GPUCount() > 1 {
+		accel = append(accel, fmt.Sprintf("Tensor Split (%s)", sys.TensorSplitArg()))
 	}
 	if profile.IsHybrid {
 		accel = append(accel, "SWA-Full (hybrid arch)")
@@ -397,7 +312,7 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 		fmt.Printf("      Accel:  %s\n", strings.Join(accel, " + "))
 	}
 
-	// [3/5] Check files
+	// [3/6] Check files
 	fmt.Printf("\n[3/6] Checking files...\n")
 	var binaryPath string
 	var isTurboQuant bool
@@ -409,15 +324,15 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 		fmt.Printf("      Binary: %s [user-specified]\n", filepath.Base(binaryPath))
 	} else {
 		var err error
-		binaryPath, isTurboQuant, err = engine.EnsureBinary(hw)
+		binaryPath, isTurboQuant, err = llm.EnsureBinary(sys)
 		if err != nil {
 			return fmt.Errorf("failed to ensure binary: %w", err)
 		}
 		fmt.Printf("      Binary: %s [cached]\n", filepath.Base(binaryPath))
 	}
-	engine.VerifyBackend(binaryPath, hw)
+	llm.VerifyBackend(binaryPath, sys)
 
-	modelPath, err := model.EnsureFile(profile)
+	modelPath, err := catalog.EnsureFile(profile)
 	if err != nil {
 		return fmt.Errorf("failed to ensure model file: %w", err)
 	}
@@ -425,13 +340,12 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 
 	// [4/6] OOM preflight check
 	fmt.Printf("\n[4/6] Preflight check...\n")
-	// iso3: static check (bundled turboquant binary + all GPUs SM>=80)
-	caps := hw.ClusterCaps()
-	if profile.HasIsoQuant && !engine.ShouldUseIso3(isTurboQuant, caps.MinSM) {
+	caps := sys.ClusterCaps()
+	if profile.HasIsoQuant && !llm.ShouldUseIso3(isTurboQuant, caps.MinSM) {
 		fmt.Printf("      iso3 不可用（MinSM%d 或非 turboquant binary），回退到 q8_0/q4_0\n", caps.MinSM)
 		profile.HasIsoQuant = false
 	}
-	if err := engine.PreflightCheck(profile, hw); err != nil {
+	if err := llm.PreflightCheck(profile, sys); err != nil {
 		return err
 	}
 	fmt.Printf("      ✓ VRAM sufficient\n")
@@ -439,13 +353,13 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 	// [5/6] Warmup benchmark
 	fmt.Printf("\n[5/6] Warmup benchmark...\n")
 	if reset {
-		if err := optimizer.ClearProfileCache(profile.ModelID, hw); err != nil {
+		if err := llm.ClearProfileCache(profile.ModelID, sys); err != nil {
 			fmt.Printf("      ⚠️  清除缓存失败: %v\n", err)
 		} else {
 			fmt.Printf("      已清除缓存，重新探测\n")
 		}
 	}
-	optimized, err := optimizer.Warmup(profile, binaryPath, modelPath, hw, fast, mode)
+	optimized, err := llm.Warmup(profile, binaryPath, modelPath, sys, fast, mode)
 	if err != nil {
 		fmt.Printf("      ⚠️  Warmup failed: %v\n", err)
 		fmt.Printf("      Using default parameters\n")
@@ -457,24 +371,21 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 	fmt.Printf("\n[6/6] Starting server...\n")
 	cfg, _ := config.Load()
 
-	// Use warmup-optimized args if available
 	var optimizedArgs []string
 	if optimized != nil {
 		optimizedArgs = optimized.LaunchArgs
 	}
-	eng, err := engine.StartWithArgs(profile, binaryPath, modelPath, hw, optimizedArgs, host)
+	eng, err := llm.StartWithArgs(profile, binaryPath, modelPath, sys, optimizedArgs, host)
 	if err != nil {
 		return fmt.Errorf("failed to start llama-server: %w", err)
 	}
 	fmt.Printf("      llama-server started (PID %d, port %d)\n", eng.PID, eng.Port)
 
-	// Start proxy
-	proxyServer := proxy.NewServer(cfg.ProxyPort, eng.Port, profile.ModelID, host)
+	proxyServer := gateway.New(cfg.ProxyPort, eng.Port, profile.ModelID, host)
 	proxyServer.StartAsync()
 	fmt.Printf("      Ashforge proxy started (port %d)\n", cfg.ProxyPort)
 
-	// Start monitor
-	mon := monitor.NewMonitor(eng.Port, profile.DisplayName)
+	mon := tui.NewDisplay(eng.Port, profile.DisplayName)
 	if optimized != nil {
 		mon.ParamInfo = buildParamSummary(optimized.LaunchArgs)
 	}
@@ -485,42 +396,23 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 		tpsStr = fmt.Sprintf(" @ %.1f tok/s", optimized.MeasuredTPS)
 	}
 
-	// Ready 框
-	fmt.Println()
-	boxWidth := 51 // 框内容宽度（不含边框）
-	fmt.Println("  ┌─────────────────────────────────────────────────┐")
-
-	// 第一行：Ready 状态
-	readyText := fmt.Sprintf("Ready — %s%s", profile.DisplayName, tpsStr)
-	readyWidth := displayWidth(readyText)
-	pad := boxWidth - readyWidth
-	if pad < 1 {
-		pad = 1
-	}
-	color.Green("  │  %s%s│\n", readyText, strings.Repeat(" ", pad))
-
-	// 第二行：API 地址
+	// Ready box
 	apiHost := host
 	if apiHost == "" || apiHost == "0.0.0.0" {
-		apiHost = "127.0.0.1" // 显示时用 127.0.0.1，但实际监听 0.0.0.0
+		apiHost = "127.0.0.1"
 	}
-	apiText := fmt.Sprintf("API: http://%s:%d/v1/chat/completions", apiHost, cfg.ProxyPort)
-	apiWidth := displayWidth(apiText)
-	pad2 := boxWidth - apiWidth
-	if pad2 < 1 {
-		pad2 = 1
+	fmt.Println()
+	const boxW = 51
+	padLine := func(text string) string {
+		pad := boxW - displayWidth(text)
+		if pad < 1 {
+			pad = 1
+		}
+		return text + strings.Repeat(" ", pad)
 	}
-	fmt.Printf("  │  %s%s│\n", apiText, strings.Repeat(" ", pad2))
-
-	// 第三行：模型文件夹
-	modelDirText := fmt.Sprintf("模型文件夹: %s", modelDirDisplay())
-	modelDirWidth := displayWidth(modelDirText)
-	pad3 := boxWidth - modelDirWidth
-	if pad3 < 1 {
-		pad3 = 1
-	}
-	dim.Printf("  │  %s%s│\n", modelDirText, strings.Repeat(" ", pad3))
-
+	fmt.Println("  ┌─────────────────────────────────────────────────┐")
+	color.Green("  │  %s│\n", padLine(fmt.Sprintf("Ready — %s%s", profile.DisplayName, tpsStr)))
+	fmt.Printf("  │  %s│\n", padLine(fmt.Sprintf("API: http://%s:%d/v1/chat/completions", apiHost, cfg.ProxyPort)))
 	fmt.Println("  └─────────────────────────────────────────────────┘")
 
 	fmt.Println()
@@ -529,7 +421,6 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 	fmt.Println(" 接入 IDE · Ctrl+C 停止")
 	fmt.Println()
 
-	// Block until interrupted
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
 	<-sigCh
@@ -537,7 +428,7 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 	fmt.Println("\n正在停止服务...")
 	mon.Stop()
 	proxyServer.Stop()
-	engine.Stop()
+	llm.Stop()
 	color.Green("✓ llama-server 已停止\n")
 	color.Green("✓ Ashforge proxy 已停止\n")
 	fmt.Println()
@@ -546,7 +437,6 @@ func runModel(modelName string, fast, bench bool, ctxSize int, reset bool, llama
 	return nil
 }
 
-// buildParamSummary extracts key params from launch args into a human-readable string.
 func buildParamSummary(args []string) string {
 	var parts []string
 	for i, a := range args {
@@ -567,7 +457,6 @@ func buildParamSummary(args []string) string {
 			parts = append(parts, "reuse:"+v)
 		}
 	}
-	// Check for flags without values
 	for _, a := range args {
 		switch a {
 		case "--mlock":
@@ -581,7 +470,7 @@ func buildParamSummary(args []string) string {
 
 func stopModel() error {
 	fmt.Println("Stopping model...")
-	if err := engine.Stop(); err != nil {
+	if err := llm.Stop(); err != nil {
 		return err
 	}
 	color.Green("✓ Model stopped\n")
@@ -589,7 +478,7 @@ func stopModel() error {
 }
 
 func showStatus() error {
-	eng, err := engine.Status()
+	eng, err := llm.Status()
 	if err != nil {
 		return err
 	}
@@ -604,18 +493,18 @@ func showStatus() error {
 }
 
 func probeHardware() error {
-	hw, err := hardware.Probe()
+	sys, err := hw.Probe()
 	if err != nil {
 		return fmt.Errorf("hardware probe failed: %w", err)
 	}
 
-	jsonStr, err := hw.JSON()
+	jsonStr, err := sys.JSON()
 	if err != nil {
 		return err
 	}
 
 	fmt.Println(jsonStr)
-	fmt.Printf("\nFingerprint: %s\n", hw.Fingerprint())
+	fmt.Printf("\nFingerprint: %s\n", sys.Fingerprint())
 	return nil
 }
 
@@ -696,13 +585,8 @@ func matchesIDEName(fullName, shortName string) bool {
 	}
 }
 
-func runBench() error {
-	fmt.Println("Benchmark (placeholder)")
-	return nil
-}
-
 func listModels(installed bool) error {
-	db, err := model.LoadStore()
+	db, err := catalog.Load()
 	if err != nil {
 		return err
 	}
@@ -731,13 +615,6 @@ func listModels(installed bool) error {
 		fmt.Println()
 	}
 
-	dim.Printf("  模型文件夹：%s\n", modelDirDisplay())
-	dim.Println("  将 .gguf 文件放入此目录，Ashforge 自动识别")
-	dim.Println("  如需更换文件夹: ashforge config set model_dir=D:\\your\\path")
-	fmt.Println()
-	dim.Println("  → github.com/MMMchou/ashforge")
-	fmt.Println()
-
 	return nil
 }
 
@@ -745,7 +622,6 @@ func clearCache(args []string) error {
 	profileDir := config.ProfileDir()
 
 	if len(args) == 0 {
-		// 清除全部缓存
 		entries, err := os.ReadDir(profileDir)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -769,7 +645,6 @@ func clearCache(args []string) error {
 		return nil
 	}
 
-	// 清除指定模型的缓存
 	modelName := strings.ToLower(args[0])
 	entries, err := os.ReadDir(profileDir)
 	if err != nil {
@@ -838,12 +713,10 @@ func setConfig(kv string) error {
 	case "log_level":
 		cfg.LogLevel = value
 	case "model_dir":
-		// 空值表示重置为默认
 		if value == "" {
 			cfg.ModelDirOverride = ""
 			color.Green("✓ 模型目录已重置为默认: %s\n", filepath.Join(config.Dir(), "models"))
 		} else {
-			// 验证路径是否存在或可创建
 			if err := os.MkdirAll(value, 0755); err != nil {
 				return fmt.Errorf("无法创建模型目录 %s: %v", value, err)
 			}

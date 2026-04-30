@@ -1,0 +1,1034 @@
+models:
+  # Qwen3 Family
+  - id: qwen3-0.6b
+    display_name: "Qwen3-0.6B"
+    family: qwen3
+    arch: dense
+    total_params_b: 0.6
+    active_params_b: 0.6
+    layers: 28
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 2
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "unsloth/Qwen3-0.6B-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 0.7
+        quality_loss_pct: 0.2
+        min_vram_gb: 2
+        min_ram_gb: 1
+      - id: q5-k-m
+        hf_repo: "unsloth/Qwen3-0.6B-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 0.4
+        quality_loss_pct: 0.8
+        min_vram_gb: 2
+        min_ram_gb: 1
+      - id: q4-k-m
+        hf_repo: "unsloth/Qwen3-0.6B-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 0.4
+        quality_loss_pct: 1.0
+        min_vram_gb: 2
+        min_ram_gb: 1
+      - id: q3-k-m
+        hf_repo: "unsloth/Qwen3-0.6B-GGUF"
+        hf_file: "*Q3_K_M*"
+        size_gb: 0.3
+        quality_loss_pct: 2.5
+        min_vram_gb: 2
+        min_ram_gb: 1
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|im_start|>"
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  - id: qwen3-1.7b
+    display_name: "Qwen3-1.7B"
+    family: qwen3
+    arch: dense
+    total_params_b: 1.7
+    active_params_b: 1.7
+    layers: 28
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 2
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "unsloth/Qwen3-1.7B-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 1.9
+        quality_loss_pct: 0.2
+        min_vram_gb: 3
+        min_ram_gb: 2
+      - id: q5-k-m
+        hf_repo: "unsloth/Qwen3-1.7B-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 1.2
+        quality_loss_pct: 0.8
+        min_vram_gb: 3
+        min_ram_gb: 2
+      - id: q4-k-m
+        hf_repo: "unsloth/Qwen3-1.7B-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 1.0
+        quality_loss_pct: 1.0
+        min_vram_gb: 2
+        min_ram_gb: 1
+      - id: q3-k-m
+        hf_repo: "unsloth/Qwen3-1.7B-GGUF"
+        hf_file: "*Q3_K_M*"
+        size_gb: 0.9
+        quality_loss_pct: 2.5
+        min_vram_gb: 2
+        min_ram_gb: 1
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|im_start|>"
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  - id: qwen3-4b
+    display_name: "Qwen3-4B"
+    family: qwen3
+    arch: dense
+    total_params_b: 4
+    active_params_b: 4
+    layers: 36
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "unsloth/Qwen3-4B-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 4.4
+        quality_loss_pct: 0.2
+        min_vram_gb: 6
+        min_ram_gb: 4
+      - id: q5-k-m
+        hf_repo: "unsloth/Qwen3-4B-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 2.8
+        quality_loss_pct: 0.8
+        min_vram_gb: 4
+        min_ram_gb: 3
+      - id: q4-k-m
+        hf_repo: "unsloth/Qwen3-4B-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 2.4
+        quality_loss_pct: 1.0
+        min_vram_gb: 4
+        min_ram_gb: 2
+      - id: q3-k-m
+        hf_repo: "unsloth/Qwen3-4B-GGUF"
+        hf_file: "*Q3_K_M*"
+        size_gb: 2.0
+        quality_loss_pct: 2.5
+        min_vram_gb: 3
+        min_ram_gb: 2
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|im_start|>"
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  - id: qwen3-8b
+    display_name: "Qwen3-8B"
+    family: qwen3
+    arch: dense
+    total_params_b: 8
+    active_params_b: 8
+    layers: 36
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: true
+    quantizations:
+      - id: q8-0
+        hf_repo: "unsloth/Qwen3-8B-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 8.8
+        quality_loss_pct: 0.2
+        min_vram_gb: 10
+        min_ram_gb: 8
+      - id: q5-k-m
+        hf_repo: "unsloth/Qwen3-8B-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 5.6
+        quality_loss_pct: 0.8
+        min_vram_gb: 7
+        min_ram_gb: 5
+      - id: q4-k-m
+        hf_repo: "unsloth/Qwen3-8B-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 4.8
+        quality_loss_pct: 1.0
+        min_vram_gb: 6
+        min_ram_gb: 4
+      - id: q3-k-m
+        hf_repo: "unsloth/Qwen3-8B-GGUF"
+        hf_file: "*Q3_K_M*"
+        size_gb: 4.0
+        quality_loss_pct: 2.5
+        min_vram_gb: 5
+        min_ram_gb: 4
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|im_start|>"
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  - id: qwen3-14b
+    display_name: "Qwen3-14B"
+    family: qwen3
+    arch: dense
+    total_params_b: 14
+    active_params_b: 14
+    layers: 40
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "unsloth/Qwen3-14B-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 15.4
+        quality_loss_pct: 0.2
+        min_vram_gb: 17
+        min_ram_gb: 14
+      - id: q5-k-m
+        hf_repo: "unsloth/Qwen3-14B-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 9.8
+        quality_loss_pct: 0.8
+        min_vram_gb: 11
+        min_ram_gb: 9
+      - id: q4-k-m
+        hf_repo: "unsloth/Qwen3-14B-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 8.4
+        quality_loss_pct: 1.0
+        min_vram_gb: 10
+        min_ram_gb: 8
+      - id: q3-k-m
+        hf_repo: "unsloth/Qwen3-14B-GGUF"
+        hf_file: "*Q3_K_M*"
+        size_gb: 7.0
+        quality_loss_pct: 2.5
+        min_vram_gb: 8
+        min_ram_gb: 6
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|im_start|>"
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  - id: qwen3-32b
+    display_name: "Qwen3-32B"
+    family: qwen3
+    arch: dense
+    total_params_b: 32
+    active_params_b: 32
+    layers: 64
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "unsloth/Qwen3-32B-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 35.2
+        quality_loss_pct: 0.2
+        min_vram_gb: 37
+        min_ram_gb: 32
+      - id: q5-k-m
+        hf_repo: "unsloth/Qwen3-32B-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 22.4
+        quality_loss_pct: 0.8
+        min_vram_gb: 24
+        min_ram_gb: 20
+      - id: q4-k-m
+        hf_repo: "unsloth/Qwen3-32B-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 19.2
+        quality_loss_pct: 1.0
+        min_vram_gb: 21
+        min_ram_gb: 18
+      - id: q3-k-m
+        hf_repo: "unsloth/Qwen3-32B-GGUF"
+        hf_file: "*Q3_K_M*"
+        size_gb: 16.0
+        quality_loss_pct: 2.5
+        min_vram_gb: 17
+        min_ram_gb: 14
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|im_start|>"
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  - id: qwen3-30b-a3b
+    display_name: "Qwen3-30B-A3B"
+    family: qwen3
+    arch: moe
+    total_params_b: 30
+    active_params_b: 3
+    layers: 48
+    experts_total: 128
+    experts_active: 8
+    kv_heads: 4
+    native_mtp: true
+    quantizations:
+      - id: apex-i-balanced
+        hf_repo: "mudler/Qwen3-30B-A3B-APEX-GGUF"
+        hf_file: "*APEX-I-Balanced*"
+        size_gb: 20
+        quality_loss_pct: 0.5
+        min_vram_gb: 17
+        min_ram_gb: 4
+      - id: apex-i-quality
+        hf_repo: "mudler/Qwen3-30B-A3B-APEX-GGUF"
+        hf_file: "*APEX-I-Quality*"
+        size_gb: 18
+        quality_loss_pct: 0.3
+        min_vram_gb: 15
+        min_ram_gb: 4
+      - id: apex-i-compact
+        hf_repo: "mudler/Qwen3-30B-A3B-APEX-GGUF"
+        hf_file: "*APEX-I-Compact*"
+        size_gb: 14
+        quality_loss_pct: 1.5
+        min_vram_gb: 11
+        min_ram_gb: 4
+      - id: ud-q5-k-xl
+        hf_repo: "unsloth/Qwen3-30B-A3B-GGUF"
+        hf_file: "*UD-Q5_K_XL*"
+        size_gb: 22
+        quality_loss_pct: 0.8
+        min_vram_gb: 20
+        min_ram_gb: 4
+      - id: ud-q4-k-xl
+        hf_repo: "unsloth/Qwen3-30B-A3B-GGUF"
+        hf_file: "*UD-Q4_K_XL*"
+        size_gb: 18
+        quality_loss_pct: 1.2
+        min_vram_gb: 16
+        min_ram_gb: 4
+      - id: ud-q3-k-xl
+        hf_repo: "unsloth/Qwen3-30B-A3B-GGUF"
+        hf_file: "*UD-Q3_K_XL*"
+        size_gb: 14
+        quality_loss_pct: 3.0
+        min_vram_gb: 5
+        min_ram_gb: 10
+      - id: ud-q2-k-xl
+        hf_repo: "unsloth/Qwen3-30B-A3B-GGUF"
+        hf_file: "*UD-Q2_K_XL*"
+        size_gb: 10
+        quality_loss_pct: 7.0
+        min_vram_gb: 4
+        min_ram_gb: 7
+    moe_offload_template: ".ffn_.*_exps.=CPU"
+    stop_tokens:
+      - "<|im_start|>"
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  - id: qwen3.6-35b-a3b
+    display_name: "Qwen3.6-35B-A3B"
+    family: qwen3
+    arch: moe
+    total_params_b: 35
+    active_params_b: 3
+    layers: 48
+    experts_total: 128
+    experts_active: 8
+    kv_heads: 4
+    native_mtp: true
+    quantizations:
+      - id: apex-i-balanced
+        hf_repo: "mudler/Qwen3.6-35B-A3B-APEX-GGUF"
+        hf_file: "*APEX-I-Balanced*"
+        size_gb: 24
+        quality_loss_pct: 0.5
+        min_vram_gb: 21
+        min_ram_gb: 4
+      - id: apex-i-quality
+        hf_repo: "mudler/Qwen3.6-35B-A3B-APEX-GGUF"
+        hf_file: "*APEX-I-Quality*"
+        size_gb: 21.3
+        quality_loss_pct: 0.3
+        min_vram_gb: 18
+        min_ram_gb: 4
+      - id: apex-i-compact
+        hf_repo: "mudler/Qwen3.6-35B-A3B-APEX-GGUF"
+        hf_file: "*APEX-I-Compact*"
+        size_gb: 17
+        quality_loss_pct: 1.5
+        min_vram_gb: 14
+        min_ram_gb: 4
+      - id: ud-q5-k-xl
+        hf_repo: "unsloth/Qwen3.6-35B-A3B-GGUF"
+        hf_file: "*UD-Q5_K_XL*"
+        size_gb: 25
+        quality_loss_pct: 0.8
+        min_vram_gb: 22
+        min_ram_gb: 4
+      - id: ud-q4-k-xl
+        hf_repo: "unsloth/Qwen3.6-35B-A3B-GGUF"
+        hf_file: "*UD-Q4_K_XL*"
+        size_gb: 21
+        quality_loss_pct: 1.2
+        min_vram_gb: 18
+        min_ram_gb: 4
+      - id: ud-q3-k-xl
+        hf_repo: "unsloth/Qwen3.6-35B-A3B-GGUF"
+        hf_file: "*UD-Q3_K_XL*"
+        size_gb: 16
+        quality_loss_pct: 3.0
+        min_vram_gb: 6
+        min_ram_gb: 12
+      - id: ud-q2-k-xl
+        hf_repo: "unsloth/Qwen3.6-35B-A3B-GGUF"
+        hf_file: "*UD-Q2_K_XL*"
+        size_gb: 11
+        quality_loss_pct: 7.0
+        min_vram_gb: 5
+        min_ram_gb: 8
+    moe_offload_template: ".ffn_.*_exps.=CPU"
+    stop_tokens:
+      - "<|im_start|>"
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  - id: qwen3-235b-a22b
+    display_name: "Qwen3-235B-A22B"
+    family: qwen3
+    arch: moe
+    total_params_b: 235
+    active_params_b: 22
+    layers: 94
+    experts_total: 128
+    experts_active: 8
+    kv_heads: 8
+    native_mtp: true
+    quantizations:
+      - id: ud-q5-k-xl
+        hf_repo: "unsloth/Qwen3-235B-A22B-GGUF"
+        hf_file: "*UD-Q5_K_XL*"
+        size_gb: 165
+        quality_loss_pct: 0.8
+        min_vram_gb: 80
+        min_ram_gb: 90
+      - id: ud-q4-k-xl
+        hf_repo: "unsloth/Qwen3-235B-A22B-GGUF"
+        hf_file: "*UD-Q4_K_XL*"
+        size_gb: 135
+        quality_loss_pct: 1.2
+        min_vram_gb: 48
+        min_ram_gb: 90
+      - id: ud-q3-k-xl
+        hf_repo: "unsloth/Qwen3-235B-A22B-GGUF"
+        hf_file: "*UD-Q3_K_XL*"
+        size_gb: 105
+        quality_loss_pct: 3.0
+        min_vram_gb: 24
+        min_ram_gb: 85
+      - id: ud-q2-k-xl
+        hf_repo: "unsloth/Qwen3-235B-A22B-GGUF"
+        hf_file: "*UD-Q2_K_XL*"
+        size_gb: 75
+        quality_loss_pct: 7.0
+        min_vram_gb: 12
+        min_ram_gb: 65
+    moe_offload_template: ".ffn_.*_exps.=CPU"
+    stop_tokens:
+      - "<|im_start|>"
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  # Gemma 3 Family
+  - id: gemma-3-4b
+    display_name: "Gemma 3 4B"
+    family: gemma3
+    arch: dense
+    total_params_b: 4
+    active_params_b: 4
+    layers: 34
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 4
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "bartowski/google_gemma-3-4b-it-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 4.4
+        quality_loss_pct: 0.0
+        min_vram_gb: 6
+        min_ram_gb: 2
+      - id: q5-k-m
+        hf_repo: "bartowski/google_gemma-3-4b-it-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 3.1
+        quality_loss_pct: 0.5
+        min_vram_gb: 5
+        min_ram_gb: 2
+      - id: q4-k-m
+        hf_repo: "bartowski/google_gemma-3-4b-it-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 2.7
+        quality_loss_pct: 1.0
+        min_vram_gb: 4
+        min_ram_gb: 2
+    moe_offload_template: ""
+    stop_tokens:
+      - "<end_of_turn>"
+      - "<eos>"
+
+  - id: gemma-3-12b
+    display_name: "Gemma 3 12B"
+    family: gemma3
+    arch: dense
+    total_params_b: 12
+    active_params_b: 12
+    layers: 48
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 4
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "bartowski/google_gemma-3-12b-it-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 13.0
+        quality_loss_pct: 0.0
+        min_vram_gb: 16
+        min_ram_gb: 4
+      - id: q5-k-m
+        hf_repo: "bartowski/google_gemma-3-12b-it-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 8.8
+        quality_loss_pct: 0.5
+        min_vram_gb: 12
+        min_ram_gb: 4
+      - id: q4-k-m
+        hf_repo: "bartowski/google_gemma-3-12b-it-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 7.3
+        quality_loss_pct: 1.0
+        min_vram_gb: 10
+        min_ram_gb: 3
+    moe_offload_template: ""
+    stop_tokens:
+      - "<end_of_turn>"
+      - "<eos>"
+
+  - id: gemma-3-27b
+    display_name: "Gemma 3 27B"
+    family: gemma3
+    arch: dense
+    total_params_b: 27
+    active_params_b: 27
+    layers: 62
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 4
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "bartowski/google_gemma-3-27b-it-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 26.7
+        quality_loss_pct: 0.0
+        min_vram_gb: 32
+        min_ram_gb: 8
+      - id: q5-k-m
+        hf_repo: "bartowski/google_gemma-3-27b-it-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 17.9
+        quality_loss_pct: 0.5
+        min_vram_gb: 24
+        min_ram_gb: 6
+      - id: q4-k-m
+        hf_repo: "bartowski/google_gemma-3-27b-it-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 15.4
+        quality_loss_pct: 1.0
+        min_vram_gb: 20
+        min_ram_gb: 5
+      - id: q3-k-m
+        hf_repo: "bartowski/google_gemma-3-27b-it-GGUF"
+        hf_file: "*Q3_K_M*"
+        size_gb: 12.5
+        quality_loss_pct: 2.0
+        min_vram_gb: 16
+        min_ram_gb: 4
+    moe_offload_template: ""
+    stop_tokens:
+      - "<end_of_turn>"
+      - "<eos>"
+
+  # Phi-4 Family
+  - id: phi-4
+    display_name: "Phi-4"
+    family: phi4
+    arch: dense
+    total_params_b: 14
+    active_params_b: 14
+    layers: 40
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "bartowski/phi-4-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 15.6
+        quality_loss_pct: 0.0
+        min_vram_gb: 20
+        min_ram_gb: 4
+      - id: q5-k-m
+        hf_repo: "bartowski/phi-4-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 10.4
+        quality_loss_pct: 0.5
+        min_vram_gb: 14
+        min_ram_gb: 4
+      - id: q4-k-m
+        hf_repo: "bartowski/phi-4-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 8.4
+        quality_loss_pct: 1.0
+        min_vram_gb: 12
+        min_ram_gb: 3
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|endoftext|>"
+      - "<|end|>"
+
+  - id: phi-4-mini
+    display_name: "Phi-4 Mini"
+    family: phi4
+    arch: dense
+    total_params_b: 3.8
+    active_params_b: 3.8
+    layers: 32
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "bartowski/microsoft_Phi-4-mini-instruct-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 4.1
+        quality_loss_pct: 0.0
+        min_vram_gb: 6
+        min_ram_gb: 2
+      - id: q5-k-m
+        hf_repo: "bartowski/microsoft_Phi-4-mini-instruct-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 2.8
+        quality_loss_pct: 0.5
+        min_vram_gb: 5
+        min_ram_gb: 2
+      - id: q4-k-m
+        hf_repo: "bartowski/microsoft_Phi-4-mini-instruct-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 2.4
+        quality_loss_pct: 1.0
+        min_vram_gb: 4
+        min_ram_gb: 2
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|endoftext|>"
+      - "<|end|>"
+
+  # Llama 4 Family
+  - id: llama-4-scout
+    display_name: "Llama 4 Scout"
+    family: llama4
+    arch: moe
+    total_params_b: 109
+    active_params_b: 17
+    layers: 48
+    experts_total: 16
+    experts_active: 2
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: ud-q4-k-xl
+        hf_repo: "unsloth/Llama-4-Scout-17B-16E-Instruct-GGUF"
+        hf_file: "*UD-Q4_K_XL*"
+        size_gb: 40.0
+        quality_loss_pct: 1.0
+        min_vram_gb: 8
+        min_ram_gb: 35
+      - id: ud-q3-k-xl
+        hf_repo: "unsloth/Llama-4-Scout-17B-16E-Instruct-GGUF"
+        hf_file: "*UD-Q3_K_XL*"
+        size_gb: 33.0
+        quality_loss_pct: 2.0
+        min_vram_gb: 6
+        min_ram_gb: 28
+      - id: ud-q2-k-xl
+        hf_repo: "unsloth/Llama-4-Scout-17B-16E-Instruct-GGUF"
+        hf_file: "*UD-Q2_K_XL*"
+        size_gb: 25.0
+        quality_loss_pct: 3.5
+        min_vram_gb: 5
+        min_ram_gb: 20
+    moe_offload_template: ".ffn_.*_exps.=CPU"
+    stop_tokens:
+      - "<|eot_id|>"
+      - "<|end_header_id|>"
+
+  - id: llama-4-maverick
+    display_name: "Llama 4 Maverick"
+    family: llama4
+    arch: moe
+    total_params_b: 400
+    active_params_b: 17
+    layers: 48
+    experts_total: 128
+    experts_active: 2
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: ud-q2-k-xl
+        hf_repo: "unsloth/Llama-4-Maverick-17B-128E-Instruct-GGUF"
+        hf_file: "*UD-Q2_K_XL*"
+        size_gb: 120.0
+        quality_loss_pct: 3.5
+        min_vram_gb: 10
+        min_ram_gb: 100
+      - id: iq2-xxs
+        hf_repo: "unsloth/Llama-4-Maverick-17B-128E-Instruct-GGUF"
+        hf_file: "*IQ2_XXS*"
+        size_gb: 80.0
+        quality_loss_pct: 5.0
+        min_vram_gb: 8
+        min_ram_gb: 70
+    moe_offload_template: ".ffn_.*_exps.=CPU"
+    stop_tokens:
+      - "<|eot_id|>"
+      - "<|end_header_id|>"
+
+  # DeepSeek Family
+  - id: deepseek-r1
+    display_name: "DeepSeek R1"
+    family: deepseek
+    arch: moe
+    total_params_b: 671
+    active_params_b: 37
+    layers: 61
+    experts_total: 256
+    experts_active: 8
+    kv_heads: 8
+    native_mtp: true
+    quantizations:
+      - id: ud-q4-k-xl
+        hf_repo: "unsloth/DeepSeek-R1-GGUF"
+        hf_file: "*UD-Q4_K_XL*"
+        size_gb: 400.0
+        quality_loss_pct: 1.0
+        min_vram_gb: 24
+        min_ram_gb: 350
+      - id: ud-q2-k-xl
+        hf_repo: "unsloth/DeepSeek-R1-GGUF"
+        hf_file: "*UD-Q2_K_XL*"
+        size_gb: 200.0
+        quality_loss_pct: 3.5
+        min_vram_gb: 16
+        min_ram_gb: 180
+      - id: iq2-xxs
+        hf_repo: "unsloth/DeepSeek-R1-GGUF"
+        hf_file: "*IQ2_XXS*"
+        size_gb: 131.0
+        quality_loss_pct: 5.0
+        min_vram_gb: 12
+        min_ram_gb: 120
+    moe_offload_template: ".ffn_.*_exps.=CPU"
+    stop_tokens:
+      - "<|end_of_text|>"
+      - "<|im_end|>"
+
+  - id: deepseek-r1-0528
+    display_name: "DeepSeek R1 0528"
+    family: deepseek
+    arch: moe
+    total_params_b: 671
+    active_params_b: 37
+    layers: 61
+    experts_total: 256
+    experts_active: 8
+    kv_heads: 8
+    native_mtp: true
+    quantizations:
+      - id: ud-q4-k-xl
+        hf_repo: "unsloth/DeepSeek-R1-0528-GGUF"
+        hf_file: "*UD-Q4_K_XL*"
+        size_gb: 400.0
+        quality_loss_pct: 1.0
+        min_vram_gb: 24
+        min_ram_gb: 350
+      - id: ud-q2-k-xl
+        hf_repo: "unsloth/DeepSeek-R1-0528-GGUF"
+        hf_file: "*UD-Q2_K_XL*"
+        size_gb: 200.0
+        quality_loss_pct: 3.5
+        min_vram_gb: 16
+        min_ram_gb: 180
+    moe_offload_template: ".ffn_.*_exps.=CPU"
+    stop_tokens:
+      - "<|end_of_text|>"
+      - "<|im_end|>"
+
+  # Mistral Family
+  - id: mistral-small-3.1-24b
+    display_name: "Mistral Small 3.1 24B"
+    family: mistral
+    arch: dense
+    total_params_b: 24
+    active_params_b: 24
+    layers: 56
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "bartowski/Mistral-Small-3.1-24B-Instruct-2503-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 25.5
+        quality_loss_pct: 0.0
+        min_vram_gb: 32
+        min_ram_gb: 8
+      - id: q5-k-m
+        hf_repo: "bartowski/Mistral-Small-3.1-24B-Instruct-2503-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 17.0
+        quality_loss_pct: 0.5
+        min_vram_gb: 24
+        min_ram_gb: 6
+      - id: q4-k-m
+        hf_repo: "bartowski/Mistral-Small-3.1-24B-Instruct-2503-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 14.0
+        quality_loss_pct: 1.0
+        min_vram_gb: 20
+        min_ram_gb: 5
+    moe_offload_template: ""
+    stop_tokens:
+      - "</s>"
+      - "[INST]"
+
+  - id: codestral-25.01
+    display_name: "Codestral 25.01"
+    family: mistral
+    arch: dense
+    total_params_b: 22
+    active_params_b: 22
+    layers: 56
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q8-0
+        hf_repo: "bartowski/Codestral-25.01-GGUF"
+        hf_file: "*Q8_0*"
+        size_gb: 23.5
+        quality_loss_pct: 0.0
+        min_vram_gb: 28
+        min_ram_gb: 8
+      - id: q5-k-m
+        hf_repo: "bartowski/Codestral-25.01-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 15.7
+        quality_loss_pct: 0.5
+        min_vram_gb: 20
+        min_ram_gb: 6
+      - id: q4-k-m
+        hf_repo: "bartowski/Codestral-25.01-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 12.9
+        quality_loss_pct: 1.0
+        min_vram_gb: 16
+        min_ram_gb: 5
+    moe_offload_template: ""
+    stop_tokens:
+      - "</s>"
+      - "[INST]"
+
+  # Mixtral
+  - id: mixtral-8x7b
+    display_name: "Mixtral 8x7B"
+    family: mixtral
+    arch: moe
+    total_params_b: 47
+    active_params_b: 13
+    layers: 32
+    experts_total: 8
+    experts_active: 2
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q5-k-m
+        hf_repo: "bartowski/Mixtral-8x7B-Instruct-v0.1-GGUF"
+        hf_file: "*Q5_K_M*"
+        size_gb: 32.0
+        quality_loss_pct: 0.5
+        min_vram_gb: 8
+        min_ram_gb: 28
+      - id: q4-k-m
+        hf_repo: "bartowski/Mixtral-8x7B-Instruct-v0.1-GGUF"
+        hf_file: "*Q4_K_M*"
+        size_gb: 26.0
+        quality_loss_pct: 1.0
+        min_vram_gb: 6
+        min_ram_gb: 22
+      - id: q3-k-m
+        hf_repo: "bartowski/Mixtral-8x7B-Instruct-v0.1-GGUF"
+        hf_file: "*Q3_K_M*"
+        size_gb: 21.0
+        quality_loss_pct: 2.0
+        min_vram_gb: 5
+        min_ram_gb: 18
+    moe_offload_template: ".ffn_.*_exps.=CPU"
+    stop_tokens:
+      - "</s>"
+
+  # ── Yi ──────────────────────────────────────────
+  - id: yi-1.5-34b
+    display_name: "Yi-1.5 34B"
+    family: yi
+    arch: dense
+    total_params_b: 34
+    active_params_b: 34
+    layers: 60
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q4-k-m
+        hf_repo: "bartowski/Yi-1.5-34B-Chat-GGUF"
+        hf_file: "Yi-1.5-34B-Chat-Q4_K_M.gguf"
+        size_gb: 19.9
+        quality_loss_pct: 1.0
+        min_vram_gb: 22
+        min_ram_gb: 18
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  - id: yi-1.5-9b
+    display_name: "Yi-1.5 9B"
+    family: yi
+    arch: dense
+    total_params_b: 9
+    active_params_b: 9
+    layers: 48
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q5-k-m
+        hf_repo: "bartowski/Yi-1.5-9B-Chat-GGUF"
+        hf_file: "Yi-1.5-9B-Chat-Q5_K_M.gguf"
+        size_gb: 6.6
+        quality_loss_pct: 0.8
+        min_vram_gb: 8
+        min_ram_gb: 6
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|im_end|>"
+      - "<|endoftext|>"
+
+  # ── Command R ───────────────────────────────────
+  - id: command-r-7b
+    display_name: "Command R 7B"
+    family: command-r
+    arch: dense
+    total_params_b: 7
+    active_params_b: 7
+    layers: 32
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q4-k-m
+        hf_repo: "bartowski/c4ai-command-r7b-12-2024-GGUF"
+        hf_file: "c4ai-command-r7b-12-2024-Q4_K_M.gguf"
+        size_gb: 4.7
+        quality_loss_pct: 1.0
+        min_vram_gb: 6
+        min_ram_gb: 4
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|END_OF_TURN_TOKEN|>"
+
+  # ── InternLM ────────────────────────────────────
+  - id: internlm3-8b
+    display_name: "InternLM3 8B"
+    family: internlm
+    arch: dense
+    total_params_b: 8
+    active_params_b: 8
+    layers: 32
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q5-k-m
+        hf_repo: "bartowski/internlm3-8b-instruct-GGUF"
+        hf_file: "internlm3-8b-instruct-Q5_K_M.gguf"
+        size_gb: 5.7
+        quality_loss_pct: 0.8
+        min_vram_gb: 7
+        min_ram_gb: 5
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|im_end|>"
+
+  # ── GLM ─────────────────────────────────────────
+  - id: glm-4-9b
+    display_name: "GLM-4 9B"
+    family: glm
+    arch: dense
+    total_params_b: 9
+    active_params_b: 9
+    layers: 40
+    experts_total: 0
+    experts_active: 0
+    kv_heads: 8
+    native_mtp: false
+    quantizations:
+      - id: q5-k-m
+        hf_repo: "bartowski/glm-4-9b-chat-GGUF"
+        hf_file: "glm-4-9b-chat-Q5_K_M.gguf"
+        size_gb: 6.4
+        quality_loss_pct: 0.8
+        min_vram_gb: 8
+        min_ram_gb: 6
+    moe_offload_template: ""
+    stop_tokens:
+      - "<|endoftext|>"
+      - "<|user|>"
+      - "<|observation|>"
