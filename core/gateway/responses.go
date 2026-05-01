@@ -202,6 +202,10 @@ func (g *Gateway) handleResponsesStream(w http.ResponseWriter, body io.Reader, r
 		}
 	}
 
+	if err := scanner.Err(); err != nil {
+		log.Printf("[responses] stream scan error: %v", err)
+	}
+
 	finalText := fullText.String()
 
 	// response.output_text.done

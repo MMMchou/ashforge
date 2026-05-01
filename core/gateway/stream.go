@@ -33,20 +33,21 @@ func (g *Gateway) streamWithDetection(w http.ResponseWriter, r *http.Request, bo
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
 		w.Write(respBody)
 		return
 	}
 
+	// Set streaming headers before writing any response
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
 	// Inject context warning header (Module 4)
 	if g.ctxTracker != nil {
 		g.ctxTracker.InjectContextWarning(w)
 	}
-
-	// Set streaming headers
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {

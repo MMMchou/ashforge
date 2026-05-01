@@ -776,13 +776,18 @@ func ensureCUDAJITCache(binaryPath string) error {
 
 	cmd := exec.CommandContext(ctx, binaryPath, "--version")
 	err := cmd.Run()
+
+	// Always write marker to prevent infinite retry loops.
+	// Even on timeout, the CUDA driver cache is partially populated.
+	os.WriteFile(markerPath, []byte("1"), 0644)
+
 	if ctx.Err() == context.DeadlineExceeded {
-		return fmt.Errorf("JIT compilation timed out (120s)")
+		return fmt.Errorf("JIT compilation timed out (120s), will skip on next run")
 	}
 
-	// Write marker so we don't repeat this
-	os.WriteFile(markerPath, []byte("1"), 0644)
-	fmt.Printf("      ✓ CUDA 内核编译完成，后续启动将秒开\n")
+	if err == nil {
+		fmt.Printf("      ✓ CUDA 内核编译完成，后续启动将秒开\n")
+	}
 	return err
 }
 

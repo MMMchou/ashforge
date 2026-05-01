@@ -158,6 +158,11 @@ func ReadGGUFMeta(path string) (*GGUFMeta, error) {
 		return nil, fmt.Errorf("read kv_count: %w", err)
 	}
 
+	// Sanity check to prevent infinite loop on corrupted files
+	if kvCount > 10000 {
+		return nil, fmt.Errorf("suspicious kv_count %d in GGUF (likely corrupted)", kvCount)
+	}
+
 	meta := &GGUFMeta{
 		FileSize: info.Size(),
 	}

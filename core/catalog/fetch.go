@@ -182,7 +182,10 @@ func fetchAndCache(modelID string) error {
 	// Ensure cache directory exists
 	os.MkdirAll(hfCacheDir(), 0755)
 
-	cfg, _ := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		cfg = &config.Config{HFMirror: "https://huggingface.co"}
+	}
 	mirror := cfg.HFMirror
 	if mirror == "" {
 		mirror = "https://huggingface.co"

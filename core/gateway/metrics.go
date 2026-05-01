@@ -16,6 +16,7 @@ type ContextTracker struct {
 	mu          sync.RWMutex
 	lastUsage   ContextUsage
 	lastUpdate  time.Time
+	stopCh      chan struct{}
 }
 
 // ContextUsage holds context usage metrics
@@ -29,6 +30,7 @@ type ContextUsage struct {
 func NewContextTracker(backendPort int) *ContextTracker {
 	ct := &ContextTracker{
 		backendPort: backendPort,
+		stopCh:      make(chan struct{}),
 	}
 	go ct.pollMetrics()
 	return ct
@@ -41,17 +43,31 @@ func (ct *ContextTracker) GetUsage() ContextUsage {
 	return ct.lastUsage
 }
 
+// Stop signals the pollMetrics goroutine to exit.
+func (ct *ContextTracker) Stop() {
+	select {
+	case <-ct.stopCh:
+	default:
+		close(ct.stopCh)
+	}
+}
+
 // pollMetrics periodically fetches context usage from /metrics
 func (ct *ContextTracker) pollMetrics() {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		usage := ct.fetchUsage()
-		ct.mu.Lock()
-		ct.lastUsage = usage
-		ct.lastUpdate = time.Now()
-		ct.mu.Unlock()
+	for {
+		select {
+		case <-ct.stopCh:
+			return
+		case <-ticker.C:
+			usage := ct.fetchUsage()
+			ct.mu.Lock()
+			ct.lastUsage = usage
+			ct.lastUpdate = time.Now()
+			ct.mu.Unlock()
+		}
 	}
 }
 

@@ -41,6 +41,10 @@ type DeployProfile struct {
 
 // Match selects the best quantization for the given hardware
 func Match(model *ModelDef, sys *hw.System) (*DeployProfile, error) {
+	if len(model.Quantizations) == 0 {
+		return nil, fmt.Errorf("model %s has no quantization variants defined", model.DisplayName)
+	}
+
 	vramGB := float64(sys.TotalVRAM_MB()) / 1024.0 // 多卡总VRAM
 	ramGB := float64(sys.RAM.Total_MB) / 1024.0
 

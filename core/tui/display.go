@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/MMMchou/ashforge/core/gateway"
@@ -267,7 +268,7 @@ type Display struct {
 	backendPort int
 	modelName   string
 	stopCh      chan struct{}
-	running     bool
+	stopOnce    sync.Once
 	ctxTotal    int
 	lastAlerts  []string
 	ParamInfo   string // runtime params summary (e.g., "64K ctx · f16 KV · ub512 · mlock")
@@ -284,16 +285,14 @@ func NewDisplay(backendPort int, modelName string) *Display {
 
 // StartAsync starts the display in a background goroutine.
 func (d *Display) StartAsync() {
-	d.running = true
 	go d.run()
 }
 
 // Stop stops the display loop.
 func (d *Display) Stop() {
-	if d.running {
-		d.running = false
+	d.stopOnce.Do(func() {
 		close(d.stopCh)
-	}
+	})
 }
 
 func (d *Display) run() {

@@ -94,7 +94,13 @@ func (g *Gateway) Stop() error {
 		return nil
 	}
 	g.running = false
-	return g.server.Close()
+	if g.ctxTracker != nil {
+		g.ctxTracker.Stop()
+	}
+	if g.server != nil {
+		return g.server.Close()
+	}
+	return nil
 }
 
 // handleTransparent proxies requests directly to llama-server

@@ -156,7 +156,6 @@ func launchProcess(profile *catalog.DeployProfile, binaryPath string, args []str
 	exitCh := make(chan error, 1)
 	go func() {
 		exitCh <- cmd.Wait()
-		logFile.Close()
 	}()
 
 	pidPath := filepath.Join(config.Dir(), "llama-server.pid")
@@ -315,7 +314,10 @@ func Status() (*RunningEngine, error) {
 		return nil, nil
 	}
 
-	cfg, _ := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return &RunningEngine{PID: pid, Port: 0}, nil
+	}
 	return &RunningEngine{
 		PID:  pid,
 		Port: cfg.LlamaPort,

@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"syscall"
 	"strconv"
 	"strings"
 
@@ -369,7 +370,10 @@ func runModel(modelName string, fast bool, ctxSize int, reset bool, llamaServer 
 
 	// [6/6] Start server + proxy
 	fmt.Printf("\n[6/6] Starting server...\n")
-	cfg, _ := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
 
 	var optimizedArgs []string
 	if optimized != nil {
@@ -422,7 +426,7 @@ func runModel(modelName string, fast bool, ctxSize int, reset bool, llamaServer 
 	fmt.Println()
 
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	<-sigCh
 
 	fmt.Println("\n正在停止服务...")
