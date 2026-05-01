@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -24,6 +25,12 @@ const maxUpwardProbes = 3
 
 // minContextTPS is the minimum speed for the "context" mode to be usable.
 const minContextTPS = 15.0
+
+const (
+	benchServerTimeout = 180 * time.Second
+	modeSelectTimeout  = 10 * time.Second
+	cacheTTLDays       = 30
+)
 
 // ProbeResult stores one warmup probe measurement.
 type ProbeResult struct {
@@ -595,7 +602,7 @@ func startBenchServer(binaryPath string, args []string, port int) (*os.Process, 
 	}()
 
 	// Wait for health endpoint
-	deadline := time.Now().Add(180 * time.Second)
+	deadline := time.Now().Add(benchServerTimeout)
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/health", port))
 		if err == nil {
@@ -608,7 +615,7 @@ func startBenchServer(binaryPath string, args []string, port int) (*os.Process, 
 	}
 
 	cmd.Process.Kill()
-	return nil, fmt.Errorf("benchmark server failed to start within 60s (log: %s)", logPath)
+	return nil, fmt.Errorf("benchmark server failed to start within 180s (log: %s)", logPath)
 }
 
 // stopBenchServer stops the benchmark server
@@ -824,13 +831,9 @@ func deriveModeProfiles(results []ProbeResult, profile *catalog.DeployProfile, m
 	}
 
 	// Sort by ctx ascending (smallest first)
-	for i := 0; i < len(successes)-1; i++ {
-		for j := i + 1; j < len(successes); j++ {
-			if successes[j].Ctx < successes[i].Ctx {
-				successes[i], successes[j] = successes[j], successes[i]
-			}
-		}
-	}
+	sort.Slice(successes, func(i, j int) bool {
+		return successes[i].Ctx < successes[j].Ctx
+	})
 
 	// Find peak TPS (smallest ctx = fastest)
 	peakTPS := successes[0].TPS
@@ -949,7 +952,7 @@ func promptModeSelection(modes []ModeProfile, defaultPriority string) string {
 	case idx := <-resultCh:
 		fmt.Printf("      ✓ 已选择: %s\n", modeName(modes[idx].Priority))
 		return modes[idx].Priority
-	case <-time.After(10 * time.Second):
+	case <-time.After(modeSelectTimeout):
 		fmt.Printf("\n      ✓ 默认: %s\n", modeName(modes[defaultIdx].Priority))
 		return modes[defaultIdx].Priority
 	}

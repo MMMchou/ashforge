@@ -20,7 +20,7 @@ import (
 	"github.com/MMMchou/ashforge/core/hw"
 )
 
-func releaseTag() string {
+func ReleaseTag() string {
 	if tag := os.Getenv("ASHFORGE_LLAMA_TAG"); tag != "" {
 		return tag
 	}
@@ -54,37 +54,37 @@ func selectBinary(hw *hw.System) string {
 
 // downloadURL returns the correct release asset URL
 func downloadURL(hw *hw.System) string {
-	base := fmt.Sprintf("https://github.com/ggml-org/llama.cpp/releases/download/%s", releaseTag())
+	base := fmt.Sprintf("https://github.com/ggml-org/llama.cpp/releases/download/%s", ReleaseTag())
 	gpu := hw.PrimaryGPU()
 
 	isNVIDIA := gpu != nil && gpu.ComputeCap != ""
 
 	if runtime.GOOS == "windows" {
 		if isNVIDIA {
-			return fmt.Sprintf("%s/llama-%s-bin-win-cuda-12.4-x64.zip", base, releaseTag())
+			return fmt.Sprintf("%s/llama-%s-bin-win-cuda-12.4-x64.zip", base, ReleaseTag())
 		}
 		if gpu != nil {
-			return fmt.Sprintf("%s/llama-%s-bin-win-vulkan-x64.zip", base, releaseTag())
+			return fmt.Sprintf("%s/llama-%s-bin-win-vulkan-x64.zip", base, ReleaseTag())
 		}
-		return fmt.Sprintf("%s/llama-%s-bin-win-cpu-x64.zip", base, releaseTag())
+		return fmt.Sprintf("%s/llama-%s-bin-win-cpu-x64.zip", base, ReleaseTag())
 	}
 
 	// macOS (Metal backend for Apple Silicon, CPU for Intel)
 	if runtime.GOOS == "darwin" {
 		if runtime.GOARCH == "arm64" {
-			return fmt.Sprintf("%s/llama-%s-bin-macos-arm64.zip", base, releaseTag())
+			return fmt.Sprintf("%s/llama-%s-bin-macos-arm64.zip", base, ReleaseTag())
 		}
-		return fmt.Sprintf("%s/llama-%s-bin-macos-x64.zip", base, releaseTag())
+		return fmt.Sprintf("%s/llama-%s-bin-macos-x64.zip", base, ReleaseTag())
 	}
 
 	// Linux
 	if isNVIDIA {
-		return fmt.Sprintf("%s/llama-%s-bin-ubuntu-x64.tar.gz", base, releaseTag())
+		return fmt.Sprintf("%s/llama-%s-bin-ubuntu-x64.tar.gz", base, ReleaseTag())
 	}
 	if gpu != nil {
-		return fmt.Sprintf("%s/llama-%s-bin-ubuntu-vulkan-x64.tar.gz", base, releaseTag())
+		return fmt.Sprintf("%s/llama-%s-bin-ubuntu-vulkan-x64.tar.gz", base, ReleaseTag())
 	}
-	return fmt.Sprintf("%s/llama-%s-bin-ubuntu-x64.tar.gz", base, releaseTag())
+	return fmt.Sprintf("%s/llama-%s-bin-ubuntu-x64.tar.gz", base, ReleaseTag())
 }
 
 // EnsureBinary ensures the correct llama-server binary is available.

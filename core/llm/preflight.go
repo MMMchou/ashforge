@@ -165,14 +165,3 @@ func IdealStartCtx(profile *catalog.DeployProfile, sys *hw.System) int {
 	}
 	return alignToPow2(ctx)
 }
-
-// alignToPow2 向下对齐到 2 的幂次
-func alignToPow2(n int) int {
-	powers := []int{524288, 262144, 131072, 65536, 32768, 16384, 8192, 4096}
-	for _, p := range powers {
-		if n >= p {
-			return p
-		}
-	}
-	return 4096
-}

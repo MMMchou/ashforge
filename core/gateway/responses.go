@@ -64,7 +64,7 @@ func (g *Gateway) handleResponses(w http.ResponseWriter, r *http.Request) {
 	}
 	proxyReq.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 300 * time.Second}
+	client := &http.Client{Timeout: backendTimeout}
 	resp, err := client.Do(proxyReq)
 	if err != nil {
 		writeResponsesError(w, fmt.Sprintf("backend error: %v", err), http.StatusBadGateway)

@@ -74,7 +74,8 @@ func resolveFilename(repo, pattern, mirror string) (string, error) {
 
 	// Query HuggingFace API for file listing
 	apiURL := fmt.Sprintf("%s/api/models/%s", mirror, repo)
-	resp, err := http.Get(apiURL)
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Get(apiURL)
 	if err != nil {
 		// Fallback: construct filename from pattern
 		return fallbackFilename(repo, pattern), nil

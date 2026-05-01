@@ -114,11 +114,12 @@ func CompressMessages(messages []map[string]interface{}, totalCtx int, cfg Compr
 	return compressed, true
 }
 
+const maxSummaryRunes = 3000 // ~2K tokens budget for summary
+
 // extractiveSummary builds a summary by keeping the first line of each message
 // plus any lines containing code fences, file paths, function names, or commands.
 func extractiveSummary(messages []map[string]interface{}) string {
 	var sb strings.Builder
-	maxSummaryRunes := 3000 // ~2K tokens budget for summary
 	currentRunes := 0
 
 	for _, msg := range messages {

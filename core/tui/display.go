@@ -10,9 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
-
-	"github.com/MMMchou/ashforge/core/gateway"
 )
 
 // ── ANSI helpers ────────────────────────────────────────────────────
@@ -271,7 +270,9 @@ type Display struct {
 	stopOnce    sync.Once
 	ctxTotal    int
 	lastAlerts  []string
-	ParamInfo   string // runtime params summary (e.g., "64K ctx · f16 KV · ub512 · mlock")
+	ParamInfo           string // runtime params summary (e.g., "64K ctx · f16 KV · ub512 · mlock")
+	CompressCount       *atomic.Int64
+	CompressTokensSaved *atomic.Int64
 }
 
 // NewDisplay creates a new Display (renamed from NewMonitor).
@@ -495,8 +496,13 @@ func (d *Display) renderPanel(data DisplayData) {
 			freeK = 0
 		}
 
-		compCount := gateway.GlobalCompressStats.Count.Load()
-		compSaved := gateway.GlobalCompressStats.TokensSaved.Load()
+		var compCount, compSaved int64
+		if d.CompressCount != nil {
+			compCount = d.CompressCount.Load()
+		}
+		if d.CompressTokensSaved != nil {
+			compSaved = d.CompressTokensSaved.Load()
+		}
 
 		fmt.Printf("  \033[36m上下文\033[0m  %s%s\033[0m  %.1fK / %.0fK  余 %.1fK",
 			ctxColor,

@@ -1,9 +1,11 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -17,6 +19,7 @@ type Config struct {
 	ModelDirOverride string   `yaml:"model_dir,omitempty"`
 	AltModelDirs     []string `yaml:"alt_model_dirs,omitempty"`
 	Priority         string   `yaml:"priority,omitempty"`
+	APIKey           string   `yaml:"api_key,omitempty"`
 }
 
 var defaultConfig = Config{
@@ -27,8 +30,17 @@ var defaultConfig = Config{
 	CacheTTLDays: 30,
 }
 
+var (
+	cachedCfg *Config
+	cacheMu   sync.Mutex
+)
+
 func Dir() string {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not determine home directory: %v; falling back to temp dir\n", err)
+		home = os.TempDir()
+	}
 	return filepath.Join(home, ".ashforge")
 }
 
@@ -71,6 +83,14 @@ func EnsureConfigDir() error {
 }
 
 func Load() (*Config, error) {
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
+
+	if cachedCfg != nil {
+		cp := *cachedCfg
+		return &cp, nil
+	}
+
 	cfg := defaultConfig
 	data, err := os.ReadFile(configPath())
 	if err != nil {
@@ -103,8 +123,13 @@ func Load() (*Config, error) {
 	if v := os.Getenv("ASHFORGE_LOG_LEVEL"); v != "" {
 		cfg.LogLevel = v
 	}
+	if v := os.Getenv("ASHFORGE_API_KEY"); v != "" {
+		cfg.APIKey = v
+	}
 
-	return &cfg, nil
+	cachedCfg = &cfg
+	cp := *cachedCfg
+	return &cp, nil
 }
 
 func Save(cfg *Config) error {
@@ -112,5 +137,14 @@ func Save(cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(configPath(), data, 0644)
+	err = os.WriteFile(configPath(), data, 0644)
+	if err != nil {
+		return err
+	}
+
+	cacheMu.Lock()
+	cachedCfg = nil
+	cacheMu.Unlock()
+
+	return nil
 }

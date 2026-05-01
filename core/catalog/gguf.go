@@ -343,6 +343,10 @@ func readGGUFValue(r io.Reader, vtype uint32) (interface{}, error) {
 		if err := binary.Read(r, binary.LittleEndian, &count); err != nil {
 			return nil, err
 		}
+		const maxArrayElements = 1_000_000
+		if count > maxArrayElements {
+			return nil, fmt.Errorf("GGUF array too large: %d elements (max %d)", count, maxArrayElements)
+		}
 		// We don't need array values — just skip them.
 		for j := uint64(0); j < count; j++ {
 			if _, err := readGGUFValue(r, elemType); err != nil {

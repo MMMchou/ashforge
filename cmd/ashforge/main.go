@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -210,7 +211,7 @@ func printLogo() {
 ██║  ██║███████║██║  ██║██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
 ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 `)
-	fmt.Printf("Auto-tuned LLM Engine v%s · llama.cpp b8864\n", version)
+	fmt.Printf("Auto-tuned LLM Engine v%s · llama.cpp %s\n", version, llm.ReleaseTag())
 	dim.Println("by Ashan")
 }
 
@@ -229,6 +230,8 @@ func showMainMenu() {
 func runModel(modelName string, fast bool, ctxSize int, reset bool, llamaServer string, host string, mode string) error {
 	printLogo()
 	fmt.Println()
+
+	llm.CleanOldLogs(7 * 24 * time.Hour)
 
 	// [1/6] Probe hardware
 	fmt.Printf("[1/6] Probing hardware...\n")
@@ -390,6 +393,8 @@ func runModel(modelName string, fast bool, ctxSize int, reset bool, llamaServer 
 	fmt.Printf("      Ashforge proxy started (port %d)\n", cfg.ProxyPort)
 
 	mon := tui.NewDisplay(eng.Port, profile.DisplayName)
+	mon.CompressCount = &gateway.GlobalCompressStats.Count
+	mon.CompressTokensSaved = &gateway.GlobalCompressStats.TokensSaved
 	if optimized != nil {
 		mon.ParamInfo = buildParamSummary(optimized.LaunchArgs)
 	}
@@ -514,7 +519,10 @@ func probeHardware() error {
 
 func injectIDE(ideName string, undo bool) error {
 	cfg, _ := config.Load()
-	apiKey := "af-demo-key"
+	apiKey := cfg.APIKey
+	if apiKey == "" {
+		apiKey = "af-demo-key"
+	}
 
 	if undo {
 		ides := ide.Detect()
@@ -598,7 +606,13 @@ func listModels(installed bool) error {
 	dim.Println("\n── 本地模型 ────────────────────────────────────────")
 	fmt.Println()
 
-	for _, m := range db.ListAll() {
+	models := db.ListAll()
+	count := 0
+	for _, m := range models {
+		if installed && !hasLocalFile(m) {
+			continue
+		}
+		count++
 		color.New(color.FgGreen).Print("  ● ")
 		fmt.Printf("%s\n", color.CyanString(m.DisplayName))
 		fmt.Printf("    ID:     %s\n", m.ID)
@@ -619,7 +633,31 @@ func listModels(installed bool) error {
 		fmt.Println()
 	}
 
+	if count == 0 && installed {
+		fmt.Println("  没有已下载的模型")
+		fmt.Println("  运行 ashforge run <model> 下载并部署模型")
+	}
+
 	return nil
+}
+
+func hasLocalFile(m catalog.ModelDef) bool {
+	dirs := config.ModelScanDirs()
+	for _, dir := range dirs {
+		for _, q := range m.Quantizations {
+			patterns := []string{
+				filepath.Join(dir, fmt.Sprintf("*%s*%s*.gguf", m.ID, q.ID)),
+				filepath.Join(dir, fmt.Sprintf("*%s*.gguf", m.ID)),
+			}
+			for _, pattern := range patterns {
+				matches, _ := filepath.Glob(pattern)
+				if len(matches) > 0 {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func clearCache(args []string) error {

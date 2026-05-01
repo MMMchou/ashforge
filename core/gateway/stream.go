@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const backendTimeout = 300 * time.Second
+
 // streamWithDetection proxies a streaming chat completion with repetition detection
 // and context usage warnings
 func (g *Gateway) streamWithDetection(w http.ResponseWriter, r *http.Request, body []byte) {
@@ -23,7 +25,7 @@ func (g *Gateway) streamWithDetection(w http.ResponseWriter, r *http.Request, bo
 	}
 	proxyReq.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 300 * time.Second}
+	client := &http.Client{Timeout: backendTimeout}
 	resp, err := client.Do(proxyReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("backend error: %v", err), http.StatusBadGateway)

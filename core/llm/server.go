@@ -2,6 +2,7 @@ package llm
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/exec"
@@ -234,15 +235,56 @@ func isLikelyOOM(err error) bool {
 
 // readLastLines 读取文件最后 n 行
 func readLastLines(path string, n int) string {
-	data, err := os.ReadFile(path)
+	f, err := os.Open(path)
 	if err != nil {
 		return "(无法读取日志)"
 	}
-	lines := strings.Split(string(data), "\n")
+	defer f.Close()
+
+	stat, err := f.Stat()
+	if err != nil {
+		return "(无法读取日志)"
+	}
+
+	// Read last 8KB (enough for ~20 lines)
+	size := stat.Size()
+	readSize := int64(8192)
+	if readSize > size {
+		readSize = size
+	}
+
+	buf := make([]byte, readSize)
+	if _, err := f.ReadAt(buf, size-readSize); err != nil && err != io.EOF {
+		return "(无法读取日志)"
+	}
+
+	lines := strings.Split(string(buf), "\n")
 	if len(lines) > n {
 		lines = lines[len(lines)-n:]
 	}
 	return strings.Join(lines, "\n")
+}
+
+// CleanOldLogs removes log files older than maxAge from the logs directory.
+func CleanOldLogs(maxAge time.Duration) {
+	logDir := config.LogDir()
+	entries, err := os.ReadDir(logDir)
+	if err != nil {
+		return
+	}
+	cutoff := time.Now().Add(-maxAge)
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".log") {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		if info.ModTime().Before(cutoff) {
+			os.Remove(filepath.Join(logDir, e.Name()))
+		}
+	}
 }
 
 // filterEnvVar removes a specific environment variable from the env slice.

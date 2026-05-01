@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"sync"
+	"time"
 )
 
 // Gateway is the Ashforge gateway server
@@ -65,8 +67,11 @@ func (g *Gateway) Start() error {
 	mux.HandleFunc("/health", g.handleTransparent)
 
 	g.server = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", g.listenHost, g.listenPort),
-		Handler: mux,
+		Addr:         fmt.Sprintf("%s:%d", g.listenHost, g.listenPort),
+		Handler:      mux,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 300 * time.Second, // long for streaming responses
+		IdleTimeout:  120 * time.Second,
 	}
 
 	g.mu.Lock()
@@ -98,7 +103,9 @@ func (g *Gateway) Stop() error {
 		g.ctxTracker.Stop()
 	}
 	if g.server != nil {
-		return g.server.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		return g.server.Shutdown(ctx)
 	}
 	return nil
 }
@@ -213,21 +220,11 @@ func (g *Gateway) rewriteModelField(body []byte) []byte {
 }
 
 func containsStream(body []byte) bool {
-	// Simple check for "stream":true or "stream": true
-	for i := 0; i < len(body)-10; i++ {
-		if body[i] == '"' && i+8 < len(body) {
-			if string(body[i:i+8]) == "\"stream\"" {
-				// Look for true after colon
-				for j := i + 8; j < len(body) && j < i+20; j++ {
-					if body[j] == 't' {
-						return true
-					}
-					if body[j] == 'f' {
-						return false
-					}
-				}
-			}
-		}
+	var req struct {
+		Stream bool `json:"stream"`
 	}
-	return false
+	if err := json.Unmarshal(body, &req); err != nil {
+		return false
+	}
+	return req.Stream
 }
